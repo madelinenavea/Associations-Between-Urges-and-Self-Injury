@@ -11,7 +11,7 @@ Using generalized linear modeling (also known as multilevel models or mixed-effe
 
 ## 🔍 Overview
 
-The **urge** to engage in a self-injurious behavior is arguably the **strongest predictor** for **self-injurious behavior**s. However, specific characteristics of urges (intensity and frequency) may not predict all characteristics of self-injurious behaviors (frequency, duration, engagement). This project explores the ** relationship between characteristics of self-injurious urges (SIUs) and self-injurious behaviors (SIBs)** using **ecological momentary assessment (EMA)** data collected in **real time** over 14 days. The project applies **generalized linear mixed models (GLMMs)** to assess whether the **intensity and frequency** of SIUs can **predict** daily engagement in, and characteristics of, SIBs.
+The **urge** to engage in a self-injurious behavior is arguably the **strongest predictor** for **self-injurious behavior**s. However, specific characteristics of urges (intensity and frequency) may not predict all characteristics of self-injurious behaviors (frequency, duration, engagement). This project explores the relationship between characteristics of self-injurious urges (SIUs) and self-injurious behaviors (SIBs) using ecological momentary assessment (EMA) data collected in **real time** over 14 days. The project applies **generalized linear mixed models (GLMMs)** to assess whether the **intensity and frequency** of SIUs can **predict** daily engagement in, and characteristics of, SIBs.
 
 The goal of this project is to understand the **within-subject, time-sensitive predictive signals** of high-risk behavior using interpretable and generalizable statistical models, with the broader aim of supporting **real-time intervention strategies**.
 
