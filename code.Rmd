@@ -3,6 +3,7 @@ title: "Prospective Associations Between Self-injurious Urges and Self-injurious
 author: "Madeline Navea"
 date: "2024-10-26"
 output: html_document
+######## THIS INCLUDES ALL CODE (ANALYTIC CODE AND DATA VISUALIZATIONS) ###########
 ---
 ```{r setup}
 # Load Libraries
