@@ -1,4 +1,4 @@
-# 🔄 Modeling Daily Associations Between Self-Injurious Urges and Behaviors Using Ecological Momentary Assessment
+# 📈 Modeling Daily Associations Between Self-Injurious Urges and Behaviors Using Ecological Momentary Assessment
 Using generalized linear modeling (also known as multilevel models or mixed-effect models) to examine the predictive value of various urge characteristics on self-injurious behaviors. 
 
 ---
