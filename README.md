@@ -1,5 +1,5 @@
 # 🔄 Modeling Daily Associations Between Self-Injurious Urges and Behaviors Using Ecological Momentary Assessment
-Using generalized linear modeling (also known as multilevel models or mixed-effect models) to examine the predictive value of various urge risk factor characteristics on self-injurious behaviors. 
+Using generalized linear modeling (also known as multilevel models or mixed-effect models) to examine the predictive value of various urge characteristics on self-injurious behaviors. 
 
 ---
 
@@ -11,7 +11,7 @@ Using generalized linear modeling (also known as multilevel models or mixed-effe
 
 ## 🔍 Overview
 
-The urge to engage in a self-injurious behavior is arguably the strongest predictor for self-injurious behaviors. However, specific characteristics of urges (intensity and frequency) may not predict all characteristics of self-injurious behaviors (frequency, duration, engagement). This project explores the **dynamic relationship between characteristics of self-injurious urges (SIUs) and self-injurious behaviors (SIBs)** using **ecological momentary assessment (EMA)** data collected in **real time** over 14 days. The project applies **generalized linear mixed models (GLMMs)** to assess whether the **intensity and frequency** of SIUs can **predict** daily engagement in, and characteristics of, SIBs.
+The **urge** to engage in a self-injurious behavior is arguably the **strongest predictor** for **self-injurious behavior**s. However, specific characteristics of urges (intensity and frequency) may not predict all characteristics of self-injurious behaviors (frequency, duration, engagement). This project explores the ** relationship between characteristics of self-injurious urges (SIUs) and self-injurious behaviors (SIBs)** using **ecological momentary assessment (EMA)** data collected in **real time** over 14 days. The project applies **generalized linear mixed models (GLMMs)** to assess whether the **intensity and frequency** of SIUs can **predict** daily engagement in, and characteristics of, SIBs.
 
 The goal of this project is to understand the **within-subject, time-sensitive predictive signals** of high-risk behavior using interpretable and generalizable statistical models, with the broader aim of supporting **real-time intervention strategies**.
 
@@ -82,7 +82,7 @@ The goal of this project is to understand the **within-subject, time-sensitive p
   - **SIB duration**
   - **SIB frequency**
 
-These findings suggest that while **urge characteristics predict SIB engagement**, they may not reliably inform about **behavioral severity**, possibly due to its habitual nature or differing subjective thresholds for relief.
+These findings suggest that while **urge characteristics predict SIB engagement**, they may not reliably inform about **behavioral severity** like the amount of times you engage in a behavior or for how long. This is possibly due to its habitual nature or differing subjective thresholds for relief.
 
 ---
 
@@ -97,5 +97,5 @@ These findings suggest that while **urge characteristics predict SIB engagement*
 
 ## 📜 Citation
 
-Navea M.M., Moussaoui J.R., Smith A.R., Velkoff E.A. (under review). Prospective Associations Between Self-Injurious Urges and Behaviors. Abstract submitted to the Suicide Research Symposium, Virtual.
+Navea M.M., Moussaoui J.R., Smith A.R., Velkoff E.A. (2025, April). Prospective Associations Between Self-Injurious Urges and Behaviors. Data blitz at the fourth annual Suicide Research Symposium, Virtual.
 
