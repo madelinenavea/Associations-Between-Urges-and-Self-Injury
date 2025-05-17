@@ -1,5 +1,5 @@
 # 📈 Modeling Daily Associations Between Self-Injurious Urges and Behaviors Using Ecological Momentary Assessment
-Using generalized linear modeling (also known as multilevel models or mixed-effect models) to examine the predictive value of various urge characteristics on self-injurious behaviors. 
+Using generalized linear modeling (also known as multilevel models or mixed-effect models) to examine the associations between various urge characteristics and self-injurious behaviors. 
 
 ---
 
@@ -11,16 +11,14 @@ Using generalized linear modeling (also known as multilevel models or mixed-effe
 
 ## 🔍 Overview
 
-The **urge** to engage in a self-injurious behavior is arguably the **strongest predictor** for **self-injurious behavior**s. However, little is known about the how specific characteristics of urges (intensity and frequency) predict specific characteristics of self-injurious behaviors (frequency, duration, engagement). This project explores the relationship between characteristics of self-injurious urges (SIUs) and self-injurious behaviors (SIBs) using ecological momentary assessment (EMA) data collected in **real time** over 14 days. The project applies **generalized linear mixed models (GLMMs)** to assess whether the **intensity and frequency** of SIUs can **predict** daily engagement in, and characteristics of, SIBs.
-
-The goal of this project is to understand the **within-subject, time-sensitive predictive signals** of high-risk behavior using interpretable and generalizable statistical models, with the broader aim of supporting **real-time intervention strategies**.
+The **urge** to engage in a self-injurious behavior is arguably the **strongest predictor** for **self-injurious behavior**s. However, little is known about the associations between specific characteristics of urges (intensity and frequency) and specific characteristics of self-injurious behaviors (frequency, duration, engagement). This project explores the relationship between characteristics of self-injurious urges (SIUs) and self-injurious behaviors (SIBs) using ecological momentary assessment (EMA) data collected in **real time** over 14 days. The project applies **generalized linear mixed models (GLMMs)** to assess whether the **intensity and frequency** of SIUs are associated with daily engagement in, and characteristics of, SIBs.
 
 ---
 
 ## 📊 Research Questions
 
-- Do same-day **SIU intensity** and **SIU frequency** predict the likelihood of engaging in a SIB?
-- Can SIU characteristics predict **how long** or **how often** SIBs occur once initiated?
+- Are same-day **SIU intensity** and **SIU frequency** associated with the likelihood of engaging in a SIB?
+- Are any SIU characteristics associated with **how long** or **how often** SIBs occur once initiated?
 - What are the limitations of using subjective urge measures to infer behavioral patterns?
 
 ---
@@ -40,17 +38,6 @@ The goal of this project is to understand the **within-subject, time-sensitive p
     - **SIB Duration:** Minutes
 
 > ⚠️ **Note**: Data that support the findings of this study are available from the corresponding authors upon reasonable request. Code and data visualizations are available to download.
-
----
-
-## 📦 Repository Structure
-
-📁 data/ <- Simulated EMA dataset
-📁 notebooks/ <- Jupyter notebooks for EDA, model fitting, and visualization
-📁 models/ <- GLMM specifications and diagnostics
-📁 scripts/ <- Preprocessing and standardization logic
-📄 requirements.txt <- Python environment dependencies
-📄 README.md <- Project overview and structure
 
 ---
 
@@ -74,9 +61,9 @@ The goal of this project is to understand the **within-subject, time-sensitive p
 
 ## 📈 Key Results
 
-- **SIU Intensity** was a strong predictor of **SIB engagement**:  
+- **SIU Intensity** and **SIB engagement**:  
   - OR = 7.36, 95% CI [3.73, 14.50]  
-- **SIU Frequency** was a strong predictor of **SIB engagement**:  
+- **SIU Frequency** and **SIB engagement**:  
   - OR = 9.31, 95% CI [4.40, 19.69]  
 - **No significant association** between SIU variables and either:
   - **SIB duration**
