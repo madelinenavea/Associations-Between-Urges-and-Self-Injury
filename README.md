@@ -76,9 +76,8 @@ These findings suggest that while **urge characteristics predict SIB engagement*
 ## 💡 Future Directions
 
 - Apply **time-series or hierarchical Bayesian models** to explore individual variability over time
-- Incorporate **affective state** or **interoceptive awareness** data for multivariate prediction
-- Develop **risk scoring systems** for real-time alerts in mobile health (mHealth) applications
-- Explore **causal modeling** using Granger causality or dynamic structural models
+- Incorporate or examine other variables such as **affective state** or **interoceptive awareness**
+- Explore **causal modeling** using dynamic structural equation models
 
 ---
 
