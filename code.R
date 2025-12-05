@@ -1,0 +1,326 @@
+## ----setup------------------------------------------------------------------------------------------------------------------------
+# Load Libraries
+library(magrittr)
+library(tidyverse)
+library(lme4)
+library(dplyr)
+library(modelsummary)
+library(ggplot2)
+library(wesanderson)
+
+
+# Function to convert H:M:S format to minutes
+to_minutes <- function(time_str) {
+  if (time_str == " ") {
+    return(NA)                             # Return NA if the string is empty
+  } else {
+    parts <- strsplit(time_str, ":")[[1]]  # Split the string by ":"
+    hours <- as.numeric(parts[1])          # Extract hours
+    minutes <- as.numeric(parts[2])        # Extract minutes
+    return(hours * 60 + minutes)           # Calculate total minutes
+  }
+}
+
+
+## ----data_prep--------------------------------------------------------------------------------------------------------------------
+# Read the data frame
+raw_data <- read.csv("Raw data/CompleteDay3Up.csv")
+
+
+# Subset the data frame
+# Select the required variables
+mlm_data <- raw_data %>% 
+  dplyr::select(
+    PersonID,                                                                   # Identifier
+    Male, Ethnicity, Race, Height_totalin, Weight, BMI, Age, Gen,               # Demographics
+    SessionTime, studydays, EMA_instances, EMA_total,                           # EMA Metadata
+    U_Binge, U_Vomit, U_Laxative, U_Exercise, U_Fast, U_Restrict, U_NSSI, U_NA, # Binary SIU
+    ends_with("UrgLen"),                                                        # Duration of the urge
+    ends_with("UrgInt"),                                                        # Intensity of the urge
+    SIB_Binge,SIB_Vomit,SIB_Laxative, SIB_Exercise, SIB_Fast, SIB_Restrict, SIB_NSSI, # Binary SIB
+    BingeMinutes, VomitMinutes, LaxMinutes, ExMinutes, FastMinutes, ResMinutes, NSSIMinutes) %>% 
+    dplyr::rename(day_number = studydays) %>% 
+    mutate_all(~ ifelse(. == -999, NA, .),
+             ~ ifelse(. == "NaN", NA, .)) 
+  
+# Convert all urge duration from H:M:S format to minutes using the function we created
+mlm_data %<>% # This is the magrittr assignment pipe (equivalent to "mlm_data <- mlm_data %>%")
+  mutate(
+    BinUrgLen_Minutes = sapply(BinUrgLen, to_minutes),
+    VomUrgLen_Minutes = sapply(VomUrgLen, to_minutes),
+    LaxUrgLen_Minutes = sapply(LaxUrgLen, to_minutes),
+    ExUrgLen_Minutes = sapply(ExUrgLen, to_minutes),
+    FastUrgLen_Minutes = sapply(FastUrgLen, to_minutes),
+    ResUrgLen_Minutes = sapply(ResUrgLen, to_minutes),
+    NSSIUrgLen_Minutes = sapply(NSSIUrgLen, to_minutes),
+    BingeMinutes_usethis = sapply(BingeMinutes, to_minutes),
+    VomitMinutes_usethis = sapply(VomitMinutes, to_minutes),
+    LaxMinutes_usethis = sapply(LaxMinutes, to_minutes),
+    ExMinutes_usethis = sapply(ExMinutes, to_minutes),
+    FastMinutes_usethis = sapply(FastMinutes, to_minutes),
+    ResMinutes_usethis = sapply(ResMinutes, to_minutes),
+    NSSIMinutes_usethis = sapply(NSSIMinutes, to_minutes)) %>% 
+# Create the composite items for self-injurious urges at all observations
+    mutate(
+      SIU_frequency = rowSums(dplyr::select(., c( U_Binge, U_Vomit, U_Laxative, U_Exercise, U_Fast, U_Restrict, U_NSSI)), na.rm = TRUE),
+      SIB_frequency = rowSums(dplyr::select(., c(SIB_Binge,SIB_Vomit,SIB_Laxative, SIB_Exercise,SIB_Fast, SIB_Restrict, SIB_NSSI)), na.rm = TRUE),
+      SIU_duration = rowSums(dplyr::select(., c(BinUrgLen_Minutes, VomUrgLen_Minutes, LaxUrgLen_Minutes, ExUrgLen_Minutes, FastUrgLen_Minutes, ResUrgLen_Minutes, NSSIUrgLen_Minutes)), na.rm = TRUE),
+      SIU_intensity = rowSums(dplyr::select(., c(BinUrgInt, VomUrgInt, LaxUrgInt, ExUrgInt, FastUrgInt, ResUrgInt, NSSIUrgInt)), na.rm=TRUE),
+      SIB_duration = rowSums(dplyr::select(., c(BingeMinutes_usethis, VomitMinutes_usethis, LaxMinutes_usethis, ExMinutes_usethis, FastMinutes_usethis, ResMinutes_usethis, NSSIMinutes_usethis)),na.rm=TRUE))
+
+# Create meta data
+# Use the SessionTime variable to count off observations
+# Convert SessionTime to a POSIXct object
+mlm_data$SessionTime <- as.POSIXct(mlm_data$SessionTime, format = "%m/%d/%y %H:%M")
+  
+# Group by ID and count the number of session times
+mlm_data %<>%
+  arrange(PersonID, day_number, SessionTime) %>%   # Arrange data for counting
+  dplyr::group_by(PersonID) %>%                           # Group by ID_MOMENT and daynum
+  dplyr::mutate(observation_number = row_number())        # Count observations within each group
+ 
+# View the resulting data frame
+table(mlm_data$day_number)                         # Observations look good
+table(mlm_data$observation_number)                 # Number of days looks good
+
+# Calculate maximum day and observation number for each ID_MOMENT
+max_num <- mlm_data %>%
+  dplyr::group_by(PersonID) %>%
+  dplyr::summarise(day_total = max(day_number, na.rm = TRUE),
+            observation_total = max(observation_number, na.rm = TRUE))
+
+# Join day_total into profile_wide
+mlm_data %<>%
+  dplyr::left_join(max_num, by = "PersonID")
+
+mlm_data %<>%
+  group_by(PersonID, day_number) %>%  # This line allows us to group participants' data within-day and to subsequently calculate our indicator variables
+  dplyr::mutate(
+       SIU_intensity_total = sum(SIU_intensity), #predictor 1
+       SIU_frequency_total = sum(SIU_frequency), #predictor 2
+       SIB_duration_total = sum(SIB_duration), #outcome 1
+       SIB_frequency_total = sum(SIB_frequency)) %>%  #outcome 2
+    dplyr::ungroup() %>% 
+  mutate(
+    SIB_engagement = ifelse(SIB_frequency_total > 0, 1, 0)) %>% #outcome 3
+  mutate(
+    SIB_engagement_lagged = lead(SIB_engagement, n = 1),
+    SIB_duration_lagged = lead(SIB_duration_total, n = 1),
+    SIB_frequency_lagged = lead(SIB_frequency_total, n = 1))
+
+data_subset <- mlm_data %>%
+  dplyr::select(PersonID, day_number, 
+                SIU_frequency_total, SIU_intensity_total, 
+                SIB_frequency_total, SIB_frequency_lagged, 
+                SIB_duration_total, SIB_duration_lagged, 
+                SIB_engagement, SIB_engagement_lagged) %>% 
+  unique()
+
+#Rescaling total intensity
+M_intensity <- mean(data_subset$SIU_intensity_total)
+SD_intensity <- sd(data_subset$SIU_intensity_total)
+data_subset$SIU_intensity_total_scaled <- (data_subset$SIU_intensity_total - M_intensity)/SD_intensity
+
+#Rescaling total frequency
+M_frequency <- mean(data_subset$SIU_frequency_total)
+SD_frequency <- sd(data_subset$SIU_frequency_total)
+data_subset$SIU_frequency_total_scaled <- (data_subset$SIU_frequency_total - M_frequency)/SD_frequency
+
+
+## ---------------------------------------------------------------------------------------------------------------------------------
+# SAME DAY
+#----------------------
+#Predictor - Intensity
+#Outcome - Engagement 
+model1 <- glmer(SIB_engagement ~ SIU_intensity_total_scaled + (1 + SIU_intensity_total_scaled | PersonID),
+          data = data_subset, family = binomial(link = "logit"))
+summary(model1)
+exp(fixef(model1))
+exp(confint(model1, method = "Wald"))
+
+#Predictor - Frequency
+#Outcome - Engagement
+model2 <- glmer(SIB_engagement ~ SIU_frequency_total_scaled + (1 + SIU_frequency_total_scaled | PersonID),
+          data = data_subset, family = binomial)
+summary(model2)
+exp(fixef(model2))
+exp(confint(model2, method = "Wald"))
+
+# NEXT DAY
+#----------------------
+#Predictor - Intensity
+#Outcome - Engagement 
+model3 <- glmer(SIB_engagement_lagged ~ SIU_intensity_total_scaled + (1 + SIU_intensity_total_scaled | PersonID),
+          data = data_subset, family = binomial)
+summary(model3)
+exp(fixef(model3))                     #odds ratio
+exp(confint(model3, method = "Wald"))  #confidence interval
+
+#Predictor - Frequency
+#Outcome - Engagement
+model4 <- glmer(SIB_engagement_lagged ~ SIU_frequency_total_scaled + (1 + SIU_frequency_total_scaled | PersonID),
+          data = data_subset, family = binomial)
+summary(model4)
+exp(fixef(model4))
+exp(confint(model4, method = "Wald"))
+
+TableSame_Summary <- modelsummary(list(
+  "Model 1: Same day Intensity/Engagement" = model1, 
+  "Model 2: Same day Frequency/Engagement" = model2,
+  "Model 3: Next day Intensity/Engagement" = model3,
+  "Model 4: Next day Frequency/Engagement" = model4), output = "Outputs/Table_SummaryOfficial.csv")
+
+
+## ---------------------------------------------------------------------------------------------------------------------------------
+ids <- c(179, 142, 161, 109, 155, 104)
+
+plot <- data_subset %>%
+  filter(PersonID %in% ids) %>%
+  mutate(circle = ifelse(SIB_engagement_lagged == 1, 16, 1))
+
+ggplot(plot, aes(x = day_number, y = SIU_intensity_total_scaled)) +
+  geom_line() +
+  geom_point(aes(shape = factor(circle))) +
+  scale_shape_manual(values = c("1" = 1, "16" = 16),
+                     name = "SIB engagement",
+                     labels = c("1" = "SIB engagement = no", "16" = "SIB engagement = yes")) +
+  facet_wrap(~ PersonID) +
+  scale_y_continuous(limits = c(NA, 8)) +
+  theme_bw() +
+  labs(title = "SIU intensity and SIB engagement per day",
+       x = "Day",
+       y = "SIU intensity (scaled)")
+
+
+ggplot(data_subset, aes(x = SIU_intensity_total_scaled, y = SIB_engagement_lagged)) +
+  geom_line() +
+  scale_y_continuous(limits = c(NA, 8)) +
+  theme_bw() +
+  labs(title = "SIU intensity and SIB engagement per day",
+       x = "Day",
+       y = "SIU intensity (scaled)")
+
+
+## ---------------------------------------------------------------------------------------------------------------------------------
+plot_long <- data_subset %>%
+  filter(PersonID %in% ids) %>%
+  pivot_longer(
+    cols = c(SIU_intensity_total_scaled, SIU_frequency_total_scaled),
+    names_to = "SIU_type",
+    values_to = "value"
+  ) %>%
+  mutate(SIB_label = ifelse(SIB_engagement_lagged == 1, "SIB", "No SIB"))
+
+# Plot
+official_plot <- ggplot(plot_long, aes(x = day_number, y = value, group = SIU_type, color = SIU_type)) +
+  geom_line(size = 0.5) +
+  geom_point(aes(shape = SIB_label), size = 3) +
+  scale_shape_manual(values = c("No SIB" = 1, "SIB" = 16)) +
+  scale_color_manual(
+    values = c("SIU_intensity_total_scaled" = "#4C8A29",
+               "SIU_frequency_total_scaled" = "#2A4A17"),
+    labels = c("SIU_intensity_total_scaled" = "Intensity",
+               "SIU_frequency_total_scaled" = "Frequency")
+  ) +
+  facet_wrap(~ PersonID, scales = "free_y") +
+  theme_bw(base_size = 14) +
+  labs(
+    title = "SIU Intensity/Frequency and SIB Engagement per Day",
+    x = "Day",
+    y = "SIU (scaled)",
+    color = "SIU Type",
+    shape = "SIB Engagement"
+  ) +
+  theme(legend.position = "right")
+
+ggsave(filename = "Outputs/plot_official.jpeg", plot = official_plot, width = 10, height = 7, dpi = 3000)
+
+
+## ----message=FALSE, warning=FALSE-------------------------------------------------------------------------------------------------
+##Predictor - Intensity
+##Outcome - Frequency 
+#model3 <- glmer(SIB_frequency_total ~ SIU_intensity_total_scaled + (1 + SIU_intensity_total_scaled | #PersonID),
+#          data = data_subset)
+#summary(model3)
+#exp(fixef(model3))
+#exp(confint(model3, method = "Wald"))
+#
+##Predictor - Frequency
+##Outcome - Frequency
+#model4 <- glmer(SIB_frequency_total ~ SIU_frequency_total_scaled + (1 + SIU_frequency_total_scaled | #PersonID),
+#          data = data_subset)
+#summary(model4)
+#exp(fixef(model4))
+#exp(confint(model4, method = "Wald"))
+#
+##Predictor - Intensity
+##Outcome - Duration 
+#model5 <- glmer(SIB_duration_total ~ SIU_intensity_total_scaled + (1 + SIU_intensity_total_scaled | PersonID),
+#          data = data_subset)
+#summary(model5)
+#exp(fixef(model5))
+#exp(confint(model5, method = "Wald"))
+#
+#
+##Predictor - Frequency
+##Outcome - Duration
+#model6 <- glmer(SIB_duration_total ~ SIU_frequency_total_scaled + (1 + SIU_frequency_total_scaled | PersonID),
+#          data = data_subset)
+#summary(model6)
+#exp(fixef(model6))
+#exp(confint(model6, method = "Wald"))
+#
+#
+##Summary Table - Same
+#TableSame_Summary <- modelsummary(list(
+#  "Model 1: Intensity/Engagement" = model1, 
+#  "Model 2: Frequency/Engagement" = model2,
+#  "Model 3: Intensity/Frequency" = model3,
+#  "Model 4: Frequency/Frequency" = model4,
+#  "Model 5: Intensity/Duration" = model5,
+#  "Model 6: Frequency/Duration" = model6), output = "Outputs/TableSame_Summary.csv")
+
+
+## ----message=FALSE, warning=FALSE-------------------------------------------------------------------------------------------------
+##Predictor - Intensity
+##Outcome - Frequency 
+#model9 <- glmer(SIB_frequency_lagged ~ SIU_intensity_total_scaled + (1 + SIU_intensity_total_scaled | #PersonID),
+#          data = data_subset)
+#summary(model9)
+#exp(fixef(model9))
+#exp(confint(model9, method = "Wald"))
+#
+##Predictor - Frequency
+##Outcome - Frequency
+#model10 <- glmer(SIB_frequency_lagged ~ SIU_frequency_total_scaled + (1 + SIU_frequency_total_scaled | #PersonID),
+#          data = data_subset)
+#summary(model10)
+#exp(fixef(model10))
+#exp(confint(model10, method = "Wald"))
+#
+##Predictor - Intensity
+##Outcome - Duration 
+#model11 <- glmer(SIB_duration_lagged ~ SIU_intensity_total_scaled + (1 + SIU_intensity_total_scaled | #PersonID),
+#          data = data_subset)
+#summary(model11)
+#exp(fixef(model11))
+#exp(confint(model11, method = "Wald"))
+#
+##Predictor - Frequency
+##Outcome - Duration
+#model12 <- glmer(SIB_duration_lagged ~ SIU_frequency_total_scaled + (1 + SIU_frequency_total_scaled | #PersonID),
+#          data = data_subset)
+#summary(model12)
+#exp(fixef(model12))
+#exp(confint(model12, method = "Wald"))
+#
+##Summary Table - Next
+#TableNext_Summary <- modelsummary(list(
+#  "Model 7: Intensity/Engagement" = model7, 
+#  "Model 8: Frequency/Engagement" = model8,
+#  "Model 9: Intensity/Frequency" = model9,
+#  "Model 10: Frequency/Frequency" = model10,
+#  "Model 11: Intensity/Duration" = model11,
+#  "Model 12: Frequency/Duration" = model12), output = "Outputs/TableNext_Summary.csv")
+#
+
